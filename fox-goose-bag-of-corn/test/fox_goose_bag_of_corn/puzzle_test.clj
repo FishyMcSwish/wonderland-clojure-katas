@@ -43,3 +43,60 @@
         (reduce validate-move middle-moves)
         (reduce validate-move right-moves )))))
 
+(def complete-plan [[[:fox :goose :corn :you] [:boat] []]
+        [[:fox :corn] [:boat :you :goose] []]
+        [[:fox :corn] [:boat] [:you :goose]]
+        [[:fox :corn] [:boat :you] [:goose]]
+        [[:fox :corn :you] [:boat] [:goose]]
+        [[:fox] [:boat :you :corn] [:goose]]
+        [[:fox] [:boat] [:goose :you :corn]]
+        [[:fox] [:boat :you :goose] [:corn]]
+        [[:fox :you :goose] [:boat] [:corn]]
+        [[:goose] [:boat :you :fox] [:corn]]
+        [[:goose] [:boat] [:corn :you :fox]]
+        [[:goose] [:boat :you] [:corn :fox]]
+        [[:goose :you] [:boat] [:corn :fox]]
+        [[] [:boat :you :goose] [:corn :fox]]
+        [[] [:boat] [:you :goose :corn :fox]]])
+
+(def partial-plan [[[:fox :goose :corn :you] [:boat] []]
+        [[:fox :corn] [:boat :you :goose] []]
+        [[:fox :corn] [:boat] [:you :goose]]
+        [[:fox :corn] [:boat :you] [:goose]]
+        [[:fox :corn :you] [:boat] [:goose]]
+        [[:fox] [:boat :you :corn] [:goose]]
+        [[:fox] [:boat] [:goose :you :corn]]
+        [[:fox] [:boat :you :goose] [:corn]]
+        [[:fox :you :goose] [:boat] [:corn]]
+        [[:goose] [:boat :you :fox] [:corn]]])
+
+(deftest test-repeating-positions?
+  (testing "repeating-positions? returns true if plan already has the new position"
+    (is (= true (repeating-positions? [[:goose] [:boat] [:corn :you :fox]] complete-plan))))
+  (testing "repeating-positions? returns nil if the plan does not include the new position"
+    (is (nil? (repeating-positions? [[:fox :goose] [:boat :you] [:corn]] complete-plan)))))
+
+(deftest test-is-safe?
+  (testing "it's not safe leaving a fox with a goose"
+    (is (false? (is-safe? [[:fox :goose] [:boat :you :corn] []]))))
+  (testing "it's not safe to leave a goose with corn"
+    (is (false? (is-safe? [[[] [:boat :fox :you] [:corn :goose]]]))))
+  (testing "it's not safe to overload the boat"
+    (is (false? (is-safe? [[] [:boat :you :goose :fox] [:corn]]))))
+  (testing "you need a boat in the water"
+    (is (false? (is-safe? [[] [] [:boat :you :goose :fox :corn]]))))
+  (testing "some things are safe"
+    (is (true? (is-safe? [[:fox :you :goose] [:boat] [:corn]]))))
+  (testing "leaving everyone else together is safe"
+    (is (true? (is-safe? [[:goose :corn :fox] [:boat :you] []]))))
+  (testing "no intruders"
+    (is (false? (is-safe? [[:goose :corn :fox :you] [:boat] [:intruder]]))))
+  (testing "you can't eliminate anybody"
+    (is (false? (is-safe? [[:goose] [:boat :you] [:fox]])))))
+
+(deftest test-valid-next-step?
+  (testing "say no to dupes"
+    (is (false? (valid-next-step? partial-plan [[:fox :you :goose] [:boat] [:corn]]))))
+  (testing "say no to the unsafe"
+    (is (false? (valid-next-step? partial-plan [[:fox :you] [:boat] [:goose :corn]])))))
+
